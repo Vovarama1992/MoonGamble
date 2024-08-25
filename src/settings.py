@@ -24,3 +24,8 @@ class Settings:
     REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD')
     REDIS_PORT = os.environ.get('REDIS_PORT')
     REDIS_DATABASES = os.environ.get('REDIS_DATABASES')
+
+    # Pragmatic
+    PRAGMATIC_BASE_API_URL = os.getenv("PRAGMATIC_BASE_API_URL")
+    PRAGMATIC_MERCHANT_ID = os.getenv("PRAGMATIC_MERCHANT_ID")
+    PRAGMATIC_MERCHANT_KEY = os.getenv("PRAGMATIC_MERCHANT_KEY")

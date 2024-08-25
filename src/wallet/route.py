@@ -1,5 +1,7 @@
 import logging
 from datetime import timezone, datetime
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional

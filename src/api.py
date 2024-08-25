@@ -8,6 +8,9 @@ from src.support.route import chat_router, support_router
 from src.users.route import router as user_router
 from src.wallet.route import router as wallet_router
 
+# providers
+from src.providers.pragmatic.route import router as pragmatic_provider_router
+
 # Настройка глобального логирования
 setup_logging()
 
@@ -30,6 +33,7 @@ app.include_router(user_router)
 app.include_router(wallet_router)
 app.include_router(support_router)
 app.include_router(chat_router)
+app.include_router(pragmatic_provider_router)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")
