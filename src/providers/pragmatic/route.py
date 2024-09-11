@@ -18,17 +18,30 @@ async def get_games(user: ReadProfile = Depends(get_current_active_user)):
     return await make_request("GET", "games")
 
 
-@router.post("/games/lobby")
+@router.get("/games/lobby")
 async def get_lobby(game_uuid: str, currency: str, user: ReadProfile = Depends(get_current_active_user)):
     params = {"game_uuid": game_uuid, "currency": currency}
     return await make_request("GET", "games/lobby", params)
 
 
 @router.post("/games/init")
-async def init_game_session(game_uuid: str, player_id: str, player_name: str, currency: str, session_id: str,
-                            return_url: str = None, language: str = None,
-                            user: ReadProfile = Depends(get_current_active_user)):
-    data = {
+async def init_game_session(
+    data: dict,
+    user: ReadProfile = Depends(get_current_active_user)
+):
+    game_uuid = data.get("game_uuid")
+    player_id = data.get("player_id")
+    player_name = data.get("player_name")
+    currency = data.get("currency")
+    session_id = data.get("session_id")
+    return_url = data.get("return_url", None)
+    language = data.get("language", None)
+    lobby_data = data.get("lobby_data", None)
+
+    if not game_uuid or not player_id or not player_name or not currency or not session_id:
+        raise HTTPException(status_code=400, detail="Missing required fields")
+
+    game_data = {
         "game_uuid": game_uuid,
         "player_id": player_id,
         "player_name": player_name,
@@ -36,8 +49,10 @@ async def init_game_session(game_uuid: str, player_id: str, player_name: str, cu
         "session_id": session_id,
         "return_url": return_url,
         "language": language,
+        "lobby_data": lobby_data,
     }
-    return await make_request("POST", "games/init", data=data)
+
+    return await make_request("POST", "games/init", data=game_data)
 
 
 @router.post("/balance")
@@ -176,3 +191,6 @@ async def cancel_freespin_campaign(freespin_id: str, user: ReadProfile = Depends
 @router.post("/self-validate", response_model=SelfValidateResponse)
 async def self_validate():
     return await make_request("POST", "self-validate")
+
+
+

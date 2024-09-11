@@ -1,7 +1,5 @@
 from src.service import BaseService
-
-from .models import User
-
+from src.users.models import User  # Изменённый импорт
 
 STATICS_PATH = './static/users/'
 
