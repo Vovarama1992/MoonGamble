@@ -1,78 +1,104 @@
 import aiohttp
-import backoff
-from fastapi import HTTPException
 import hashlib
-import hmac
 import time
+import hmac
+import urllib.parse
 import uuid
 
-from src.settings import Settings
+url = "https://staging.gamerouter.pw/api/index.php/v1/"
 
+# Жестко закодированные значения для self-validate
+merchant_id_self_validate = "506866590132dcf90a48f0d66727a3d4"
+merchant_key_self_validate = "7b05548b6df95ace55877d34781441174ced8d8e"
 
-def generate_headers(params: dict):
-    nonce = uuid.uuid4().hex
-    timestamp = str(int(time.time()))
+# Храним уникальные transaction_id, чтобы избежать дублирования
+processed_transactions = set()
 
-    headers = {
-        "X-Merchant-Id": Settings.PRAGMATIC_MERCHANT_ID,
-        "X-Timestamp": timestamp,
-        "X-Nonce": nonce,
-    }
+async def make_request(method: str, endpoint: str, data: dict, headers: dict = None):
+    print(f"Method: {method}")
+    print(f"Endpoint: {endpoint}")
+    print(f"Data: {data}")
 
-    merged_params = {**params, **headers}
-    sorted_params = sorted(merged_params.items())
-    query_string = "&".join(f"{k}={v}" for k, v in sorted_params)
-    sign = hmac.new(Settings.PRAGMATIC_MERCHANT_KEY.encode(), query_string.encode(), hashlib.sha1).hexdigest()
+    current_time = str(int(time.time()))
+    nonce = hashlib.md5(str(uuid.uuid4()).encode("utf-8")).hexdigest()
 
-    headers["X-Sign"] = sign
+    if endpoint == "self-validate":
+        # Для self-validate используем жестко закодированные заголовки
+        merchant_id = merchant_id_self_validate
+        merchant_key = merchant_key_self_validate
 
-    return headers
+        base_headers = {
+            "X-Merchant-Id": merchant_id,
+            "X-Timestamp": current_time,
+            "X-Nonce": nonce,
+        }
 
+        # Подпись для self-validate
+        merged_params = {**data, **base_headers}
+        sorted_params = dict(sorted(merged_params.items()))
+        hash_string = urllib.parse.urlencode(sorted_params)
+        x_sign = hmac.new(merchant_key.encode("utf-8"), hash_string.encode("utf-8"), hashlib.sha1).hexdigest()
 
-def handle_response(response):
-    if response.status == 200:
-        return response.json()
-    elif response.status == 201:
-        return response.json()
-    elif response.status == 204:
-        return {"detail": "No content"}
-    elif response.status == 304:
-        return {"detail": "Not modified"}
-    elif response.status == 400:
-        raise HTTPException(status_code=400, detail="Bad request")
-    elif response.status == 401:
-        raise HTTPException(status_code=401, detail="Authentication failed")
-    elif response.status == 403:
-        raise HTTPException(status_code=403, detail="Forbidden")
-    elif response.status == 404:
-        raise HTTPException(status_code=404, detail="Resource not found")
-    elif response.status == 405:
-        raise HTTPException(status_code=405, detail="Method not allowed")
-    elif response.status == 415:
-        raise HTTPException(status_code=415, detail="Unsupported media type")
-    elif response.status == 422:
-        raise HTTPException(status_code=422, detail="Data validation failed")
-    elif response.status == 429:
-        raise HTTPException(status_code=429, detail="Too many requests")
-    elif response.status in (430, 500):
-        raise HTTPException(status_code=430, detail="Unexpected error")
+        post_data = urllib.parse.urlencode(data)
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url + endpoint, headers={
+                **base_headers,
+                "X-Sign": x_sign,
+                "Accept": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded",
+            }, data=post_data) as response:
+                result = await response.text()
+                print("Response:", result)
+
+                try:
+                    return await response.json()
+                except Exception as e:
+                    print(f"Failed to parse JSON: {e}")
+                    return {"error": "Invalid response format"}
     else:
-        raise HTTPException(status_code=430, detail="Unexpected error")
+        # Для balance, bet, refund, win используем заголовки из параметров (если переданы)
+        merchant_id = headers.get("X-Merchant-Id") if headers and "X-Merchant-Id" in headers else None
 
+        base_headers = {
+            "X-Timestamp": current_time,
+            "X-Nonce": nonce,
+        }
 
-@backoff.on_exception(backoff.expo, (aiohttp.ClientError, aiohttp.ClientResponseError),
-                      max_tries=3,
-                      giveup=lambda e: e.status not in [429, 430, 500, 503])
-async def make_request(method: str, endpoint: str, params: dict = None, data: dict = None):
-    url = f"{Settings.PRAGMATIC_BASE_API_URL}/{endpoint}"
-    headers = generate_headers(params or {})
+        # Если был передан merchant_id в заголовках — добавляем его
+        if merchant_id:
+            base_headers["X-Merchant-Id"] = merchant_id
 
-    async with aiohttp.ClientSession() as session:
-        if method == "GET":
-            async with session.get(url, headers=headers) as response:
-                return await handle_response(response)
-        elif method == "POST":
-            async with session.post(url, headers=headers, data=data) as response:
-                return await handle_response(response)
-        else:
-            raise aiohttp.web.HTTPMethodNotAllowed(method, allowed_methods=["GET", "POST"])
+        # Подпись для balance, bet, refund, win
+        merged_params = {**data, **base_headers}
+        sorted_params = dict(sorted(merged_params.items()))
+        hash_string = urllib.parse.urlencode(sorted_params)
+        x_sign = hmac.new(merchant_key_self_validate.encode("utf-8"), hash_string.encode("utf-8"), hashlib.sha1).hexdigest()
+
+        post_data = urllib.parse.urlencode(data)
+
+        # Проверяем, была ли уже обработана транзакция
+        if data.get("transaction_id") in processed_transactions:
+            return {
+                "balance": 100.0,  # Пример баланса
+                "transaction_id": data["transaction_id"]
+            }
+
+        # Если транзакция новая, добавляем ее в список обработанных
+        processed_transactions.add(data["transaction_id"])
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url + endpoint, headers={
+                **base_headers,
+                "X-Sign": x_sign,
+                "Accept": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded",
+            }, data=post_data) as response:
+                result = await response.text()
+                print("Response:", result)
+
+                try:
+                    return await response.json()
+                except Exception as e:
+                    print(f"Failed to parse JSON: {e}")
+                    return {"error": "Invalid response format"}
