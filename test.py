@@ -25,7 +25,7 @@ request_params = {
     'game_uuid': '23ca989db9ca5ad94dbca17fa54a123f3f7efc9d',
     'player_id': '1',
     'currency': 'EUR',
-    'session_id': f'session-{current_time}',
+    'session_id': 'session-{}'.format(current_time),
 }
 
 merged_params = {**request_params, **headers}

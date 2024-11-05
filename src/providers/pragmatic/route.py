@@ -1,79 +1,72 @@
 import logging
 import hmac
 import hashlib
-import urllib.parse
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, HTTPException, FastAPI
 from decimal import Decimal
 from src.providers.pragmatic.utils import make_request
 
-# Основной логгер
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Логгер для провайдера
-logger_provider = logging.getLogger("provider")
-
 router = APIRouter(prefix="/providers/pragmatic", tags=["Providers", "Pragmatic"])
 
-session_transactions = {}
+# Данные для валидации
 merchant_id_self_validate = "506866590132dcf90a48f0d66727a3d4"
 merchant_key_self_validate = "7b05548b6df95ace55877d34781441174ced8d8e"
 
-users = {}
+# Статусы пользователей и сессий
+users = {"1": {"balance": Decimal("100.00"), "bets": [], "wins": [], "refunds": []}}
+session_transactions = {}
 
+# Эндпоинт для self-валидации
 @router.post("/self-validate")
 async def self_validate():
     logger.info("Performing self-validation")
-    
-    logger_provider.info("Sending self-validate request to provider")
-    
     response = await make_request("POST", "self-validate", data={})
-    
-    logger_provider.info(f"Response from provider (self-validate): {response}")
-    
     logger.info("Self-validation completed")
     return response
 
+# Основной роут для обработки запросов
 @router.post("/bet")
 async def handle_action(request: Request):
     form_data = await request.form()
     action = form_data.get("action")
     session_id = form_data.get("session_id")
     transaction_id = form_data.get("transaction_id")
+    player_id = form_data.get("player_id")
 
-    logger_provider.info(f"Request from provider: {form_data}")
+    logger.info(f"Handling action '{action}' for session_id '{session_id}', player_id '{player_id}', transaction_id '{transaction_id}'")
 
-    # Проверка обязательных параметров
-    if not action:
-        return error_response(400, "Missing required parameter: 'action'")
-    if not session_id:
-        return error_response(400, "Missing required parameter: 'session_id'")
-    if not transaction_id:
-        return error_response(400, "Missing required parameter: 'transaction_id'")
+    # Проверка обязательных полей
+    validate_required_fields(form_data, ["action", "session_id", "transaction_id", "player_id"])
 
-    logger.info(f"Received request parameters: {form_data}")
+    # Проверка существующего игрока
+    if player_id not in users:
+        logger.error(f"Player with player_id '{player_id}' not found")
+        return {"error_code": "INTERNAL_ERROR", "error_description": "Player not found"}
 
-    # Проверка дубликата транзакции
+    # Проверка привязки сессии к игроку
     if session_id not in session_transactions:
-        session_transactions[session_id] = []
-    if transaction_id and any(tx['id'] == transaction_id for tx in session_transactions[session_id]):
-        logger.warning(f"Transaction ID {transaction_id} already processed in session {session_id}")
-        return success_response(users[form_data.get("player_id")]["balance"], transaction_id)
+        session_transactions[session_id] = {"transactions": [], "player_id": player_id}
+        logger.info(f"New session created for player_id '{player_id}' with session_id '{session_id}'")
+    elif session_transactions[session_id]["player_id"] != player_id:
+        logger.error(f"Session '{session_id}' is tied to a different player")
+        return {"error_code": "INTERNAL_ERROR", "error_description": "Session is tied to a different player"}
 
-    session_transactions[session_id].append({
-        "id": transaction_id,
-        "action": action
-    })
+    # Проверка достаточности средств для ставки перед проверкой подписи
+    if action == "bet":
+        amount = Decimal(form_data.get("amount", 0))
+        if amount <= 0 or users[player_id]["balance"] < amount:
+            logger.warning(f"Insufficient funds for bet in session_id '{session_id}', player_id '{player_id}'")
+            return {"error_code": "INSUFFICIENT_FUNDS", "error_description": "Not enough money to place this bet"}
 
     # Проверка подписи
-    logger_provider.info("Validating signature from provider")
-    signature_ok = await check_signature(request, form_data)
-    if not signature_ok:
-        logger_provider.error("Invalid signature from provider")
-        return error_response(430, "Invalid signature")
+    if not await check_signature(request, form_data):
+        logger.error(f"Invalid signature for session_id '{session_id}'")
+        return {"error_code": "INTERNAL_ERROR", "error_description": "Invalid signature"}
 
+    # Выполнение действия после всех проверок
     try:
-        logger.info(f"Processing action: {action} for session: {session_id}")
         if action == "bet":
             return await process_bet(form_data)
         elif action == "win":
@@ -83,121 +76,84 @@ async def handle_action(request: Request):
         elif action == "balance":
             return await process_balance(form_data)
         else:
-            logger.error("Unexpected action type")
-            return error_response(400, "Unexpected action type")
+            logger.error(f"Unexpected action type '{action}' for session_id '{session_id}'")
+            return {"error_code": "INTERNAL_ERROR", "error_description": "Unexpected action type"}
     except Exception as e:
-        logger.error(f"Unhandled exception: {e}")
-        return error_response(500, "Unexpected server error. Please contact support.")
+        logger.error(f"Unhandled exception for session_id '{session_id}': {e}")
+        return {"error_code": "INTERNAL_ERROR", "error_description": "Unexpected server error. Please contact support."}
 
+# Проверка обязательных полей
+def validate_required_fields(form_data, required_fields):
+    for field in required_fields:
+        if field not in form_data:
+            raise HTTPException(status_code=400, detail=f"Missing required parameter: '{field}'")
+
+# Обработка ставки
 async def process_bet(form_data):
-    required_fields = ["player_id", "amount", "currency", "game_uuid", "transaction_id", "session_id", "type"]
-    missing_fields = [field for field in required_fields if field not in form_data]
-    if missing_fields:
-        return error_response(400, f"Missing required parameters: {', '.join(missing_fields)}")
+    player_id = form_data.get("player_id")
+    transaction_id = form_data.get("transaction_id")
+    amount = Decimal(form_data.get("amount", 0))
+    session_id = form_data.get("session_id")
 
-    user_id = form_data.get("player_id")
-    amount = Decimal(form_data.get("amount"))
+    logger.info(f"Processing bet for session_id '{session_id}', transaction_id '{transaction_id}', amount '{amount}'")
 
-    if amount <= 0:
-        return error_response(400, "Amount must be greater than zero")
+    # Проверка на дублирование транзакции
+    if any(bet["transaction_id"] == transaction_id for bet in users[player_id].get("bets", [])):
+        logger.info(f"Duplicate transaction detected for transaction_id '{transaction_id}' in session_id '{session_id}'")
+        return {
+            "balance": float(users[player_id]["balance"]),
+            "transaction_id": transaction_id
+        }
 
-    if user_id not in users:
-        users[user_id] = {"balance": Decimal(0)}
-        logger.info(f"Created user with ID {user_id}")
+    # Проверка достаточности средств
+    if amount <= 0 or users[player_id]["balance"] < amount:
+        logger.warning(f"Insufficient funds for bet in session_id '{session_id}', player_id '{player_id}'")
+        return {"error_code": "INSUFFICIENT_FUNDS", "error_description": "Not enough money to place this bet"}
 
-    if users[user_id]["balance"] < amount:
-        return error_response(402, "INSUFFICIENT_FUNDS", "Not enough money to place this bet")
-
-    users[user_id]["balance"] -= amount
-    logger.info(f"Processed bet for player {user_id}: {amount}")
-    return success_response(users[user_id]["balance"], form_data.get("transaction_id"))
-
-async def process_win(form_data):
-    required_fields = ["player_id", "amount", "currency", "game_uuid", "transaction_id", "session_id", "type"]
-    missing_fields = [field for field in required_fields if field not in form_data]
-    if missing_fields:
-        return error_response(400, f"Missing required parameters: {', '.join(missing_fields)}")
-
-    user_id = form_data.get("player_id")
-    amount = Decimal(form_data.get("amount"))
-
-    if amount <= 0:
-        return error_response(400, "Amount must be greater than zero")
-
-    if user_id not in users:
-        users[user_id] = {"balance": Decimal(0)}
-        logger.info(f"Created user with ID {user_id}")
-
-    users[user_id]["balance"] += amount
-    logger.info(f"Processed win for player {user_id}: {amount}")
-    return success_response(users[user_id]["balance"], form_data.get("transaction_id"))
-
-async def process_refund(form_data):
-    required_fields = ["player_id", "amount", "currency", "game_uuid", "transaction_id", "session_id", "bet_transaction_id"]
-    missing_fields = [field for field in required_fields if field not in form_data]
-    if missing_fields:
-        return error_response(400, f"Missing required parameters: {', '.join(missing_fields)}")
-
-    user_id = form_data.get("player_id")
-    amount = Decimal(form_data.get("amount"))
-    bet_transaction_id = form_data.get("bet_transaction_id")
-
-    bet_transaction = next((tx for tx in session_transactions[form_data.get("session_id")] if tx['id'] == bet_transaction_id), None)
-
-    if bet_transaction and bet_transaction['action'] == 'win':
-        return error_response(430, "Cannot refund a winning transaction")
-
-    if user_id not in users:
-        users[user_id] = {"balance": Decimal(0)}
-
-    users[user_id]["balance"] += amount
-    logger.info(f"Processed refund for player {user_id}: {amount}")
-    return success_response(users[user_id]["balance"], form_data.get("transaction_id"))
-
-async def process_balance(form_data):
-    required_fields = ["player_id", "currency", "session_id"]
-    missing_fields = [field for field in required_fields if field not in form_data]
-    if missing_fields:
-        return error_response(400, f"Missing required parameters: {', '.join(missing_fields)}")
-
-    user_id = form_data.get("player_id")
-
-    if user_id not in users:
-        users[user_id] = {"balance": Decimal(0)}
-        logger.info(f"Created user with ID {user_id}")
-
-    logger.info(f"Retrieved balance for player {user_id}: {users[user_id]['balance']}")
-    return success_response(users[user_id]["balance"], "N/A")
-
-async def check_signature(request: Request, form_data: dict):
-    headers = request.headers
-    merchant_key = merchant_key_self_validate
-
-    x_merchant_id = headers.get("X-Merchant-Id")
-    x_timestamp = headers.get("X-Timestamp")
-    x_nonce = headers.get("X-Nonce")
-    x_sign = headers.get("X-Sign")
-
-    if not (x_merchant_id and x_timestamp and x_nonce and x_sign):
-        return False
-
-    combined_params = {**form_data, "X-Merchant-Id": x_merchant_id, "X-Timestamp": x_timestamp, "X-Nonce": x_nonce}
-    sorted_params = dict(sorted(combined_params.items()))
-    hash_string = urllib.parse.urlencode(sorted_params)
-    calculated_sign = hmac.new(merchant_key.encode("utf-8"), hash_string.encode("utf-8"), hashlib.sha1).hexdigest()
-
-    return calculated_sign == x_sign
-
-def error_response(status_code, error_code, error_description=""):
-    logger.error(f"Error occurred: {error_code}, description: {error_description}")
+    # Обновление баланса и сохранение транзакции
+    users[player_id]["balance"] -= amount
+    users[player_id].setdefault("bets", []).append({"transaction_id": transaction_id, "amount": amount})
     return {
-        "error_code": error_code,
-        "error_description": error_description
-    }, status_code
-
-def success_response(balance, transaction_id):
-    logger.info(f"Successful transaction: transaction_id={transaction_id}, balance={balance}")
-    return {
-        "balance": float(balance),
+        "balance": float(users[player_id]["balance"]),
         "transaction_id": transaction_id
     }
+
+# Проверка подписи
+async def check_signature(request: Request, form_data: dict) -> bool:
+    sign = request.headers.get("X-Sign")
+    if not sign:
+        logger.error("Missing signature header")
+        return False
+
+    # Объединяем параметры запроса и заголовки авторизации
+    merged_params = {
+        "action": form_data.get("action", ""),
+        "session_id": form_data.get("session_id", ""),
+        "player_id": form_data.get("player_id", ""),
+        "amount": form_data.get("amount", ""),
+        "currency": form_data.get("currency", ""),
+        "game_uuid": form_data.get("game_uuid", ""),
+        "transaction_id": form_data.get("transaction_id", ""),
+        "type": form_data.get("type", ""),
+        "X-Merchant-Id": request.headers.get("X-Merchant-Id", ""),
+        "X-Timestamp": request.headers.get("X-Timestamp", ""),
+        "X-Nonce": request.headers.get("X-Nonce", ""),
+    }
+
+    # Сортируем параметры по ключам и форматируем в URL-кодированную строку
+    sorted_items = sorted(merged_params.items())
+    signature_base_string = "&".join(f"{key}={value}" for key, value in sorted_items if value)
+
+    # Создаем ожидаемую подпись с использованием sha1
+    expected_sign = hmac.new(
+        key=merchant_key_self_validate.encode('utf-8'),
+        msg=signature_base_string.encode('utf-8'),
+        digestmod=hashlib.sha1
+    ).hexdigest()
+
+    session_id = form_data.get("session_id", "")
+    logger.info(f"Expected signature for session_id '{session_id}': {expected_sign}, Received signature: {sign}")
+    return sign == expected_sign
+
+app = FastAPI()
+app.include_router(router)
