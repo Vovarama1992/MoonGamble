@@ -10181,3 +10181,79 @@ FROM users
 WHERE users.id = $1::INTEGER
 2024-11-21 07:26:06,583 - sqlalchemy.engine.Engine - INFO - [generated in 0.00066s] (1,)
 2024-11-21 07:26:06,592 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2024-11-21 16:29:13,754 - sqlalchemy.engine.Engine - INFO - select pg_catalog.version()
+2024-11-21 16:29:13,755 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2024-11-21 16:29:13,759 - sqlalchemy.engine.Engine - INFO - select current_schema()
+2024-11-21 16:29:13,760 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2024-11-21 16:29:13,763 - sqlalchemy.engine.Engine - INFO - show standard_conforming_strings
+2024-11-21 16:29:13,764 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2024-11-21 16:29:13,766 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2024-11-21 16:29:13,794 - sqlalchemy.engine.Engine - INFO - SELECT users.id, users.referrer_id, users.username, users.password, users.fullname, users.avatar, users.telegram_id, users.telegram_fullname, users.telegram_username, users.telegram_code, users.vk_id, users.active, users.fingerprint, users.fingerprint_hash, users.role, users.created_at, users.has_deposited, users.referral_bonus_rate, users.referral_earnings, users.referral_count 
+FROM users 
+WHERE users.username = $1::VARCHAR
+2024-11-21 16:29:13,795 - sqlalchemy.engine.Engine - INFO - [generated in 0.00105s] ('new',)
+2024-11-21 16:29:14,061 - sqlalchemy.engine.Engine - INFO - INSERT INTO users (referrer_id, username, password, fullname, avatar, telegram_id, telegram_fullname, telegram_username, telegram_code, vk_id, active, fingerprint, fingerprint_hash, role, created_at, has_deposited, referral_bonus_rate, referral_earnings, referral_count) VALUES ($1::INTEGER, $2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::INTEGER, $7::VARCHAR, $8::VARCHAR, $9::VARCHAR, $10::INTEGER, $11::BOOLEAN, $12::VARCHAR, $13::VARCHAR, $14::userrole, $15::TIMESTAMP WITHOUT TIME ZONE, $16::BOOLEAN, $17::FLOAT, $18::NUMERIC, $19::INTEGER) RETURNING users.id
+2024-11-21 16:29:14,061 - sqlalchemy.engine.Engine - INFO - [generated in 0.00072s] (None, 'new', '$2b$12$SNLKzEA1I158vF91MshY5ufb7XQpZA85980ppu0DzL1.Tg5MNCcma', None, '1', None, None, None, '84bd26604f304e98922d93f2b14e4295', None, True, 'fp-TW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV2luNjQ7IHg2NCkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgQ2hyb21lLzEzMS4wLjAuMCBTYWZhcmkvNTM3LjM2LTE3MzIyMDUyOTY5NTQtYnJld2RpZzc1aW8=', 'b016ed1fca5bf8b096815507a63f02f2', 'user', datetime.datetime(2024, 11, 21, 16, 29, 14, 61153), False, 0.1, 0.0, 0)
+2024-11-21 16:29:14,069 - sqlalchemy.engine.Engine - INFO - COMMIT
+2024-11-21 16:29:14,073 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2024-11-21 16:29:14,075 - sqlalchemy.engine.Engine - INFO - SELECT users.id, users.referrer_id, users.username, users.password, users.fullname, users.avatar, users.telegram_id, users.telegram_fullname, users.telegram_username, users.telegram_code, users.vk_id, users.active, users.fingerprint, users.fingerprint_hash, users.role, users.created_at, users.has_deposited, users.referral_bonus_rate, users.referral_earnings, users.referral_count 
+FROM users 
+WHERE users.id = $1::INTEGER
+2024-11-21 16:29:14,076 - sqlalchemy.engine.Engine - INFO - [generated in 0.00061s] (2,)
+2024-11-21 16:29:14,081 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2024-11-21 16:29:33,745 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2024-11-21 16:29:33,746 - sqlalchemy.engine.Engine - INFO - SELECT users.id, users.referrer_id, users.username, users.password, users.fullname, users.avatar, users.telegram_id, users.telegram_fullname, users.telegram_username, users.telegram_code, users.vk_id, users.active, users.fingerprint, users.fingerprint_hash, users.role, users.created_at, users.has_deposited, users.referral_bonus_rate, users.referral_earnings, users.referral_count 
+FROM users 
+WHERE users.username = $1::VARCHAR
+2024-11-21 16:29:33,747 - sqlalchemy.engine.Engine - INFO - [cached since 19.96s ago] ('new',)
+2024-11-21 16:29:33,749 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2024-11-21 16:29:36,412 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2024-11-21 16:29:36,418 - sqlalchemy.engine.Engine - INFO - SELECT users.id, users.referrer_id, users.username, users.password, users.fullname, users.avatar, users.telegram_id, users.telegram_fullname, users.telegram_username, users.telegram_code, users.vk_id, users.active, users.fingerprint, users.fingerprint_hash, users.role, users.created_at, users.has_deposited, users.referral_bonus_rate, users.referral_earnings, users.referral_count 
+FROM users 
+WHERE users.username = $1::VARCHAR
+2024-11-21 16:29:36,429 - sqlalchemy.engine.Engine - INFO - [cached since 22.65s ago] ('new',)
+2024-11-21 16:29:36,444 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2024-11-21 16:29:36,456 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2024-11-21 16:29:36,461 - sqlalchemy.engine.Engine - INFO - SELECT users.id, users.referrer_id, users.username, users.password, users.fullname, users.avatar, users.telegram_id, users.telegram_fullname, users.telegram_username, users.telegram_code, users.vk_id, users.active, users.fingerprint, users.fingerprint_hash, users.role, users.created_at, users.has_deposited, users.referral_bonus_rate, users.referral_earnings, users.referral_count 
+FROM users 
+WHERE users.username = $1::VARCHAR
+2024-11-21 16:29:36,462 - sqlalchemy.engine.Engine - INFO - [cached since 22.68s ago] ('new',)
+2024-11-21 16:29:36,467 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2024-11-21 16:29:36,499 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2024-11-21 16:29:36,501 - sqlalchemy.engine.Engine - INFO - SELECT users.id, users.referrer_id, users.username, users.password, users.fullname, users.avatar, users.telegram_id, users.telegram_fullname, users.telegram_username, users.telegram_code, users.vk_id, users.active, users.fingerprint, users.fingerprint_hash, users.role, users.created_at, users.has_deposited, users.referral_bonus_rate, users.referral_earnings, users.referral_count 
+FROM users 
+WHERE users.username = $1::VARCHAR
+2024-11-21 16:29:36,503 - sqlalchemy.engine.Engine - INFO - [cached since 22.72s ago] ('new',)
+2024-11-21 16:29:36,509 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2024-11-21 16:29:36,516 - sqlalchemy.engine.Engine - INFO - SELECT users.id, users.referrer_id, users.username, users.password, users.fullname, users.avatar, users.telegram_id, users.telegram_fullname, users.telegram_username, users.telegram_code, users.vk_id, users.active, users.fingerprint, users.fingerprint_hash, users.role, users.created_at, users.has_deposited, users.referral_bonus_rate, users.referral_earnings, users.referral_count 
+FROM users 
+WHERE users.username = $1::VARCHAR
+2024-11-21 16:29:36,517 - sqlalchemy.engine.Engine - INFO - [cached since 22.73s ago] ('new',)
+2024-11-21 16:29:36,529 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2024-11-21 16:29:36,533 - sqlalchemy.engine.Engine - INFO - SELECT users.id, users.referrer_id, users.username, users.password, users.fullname, users.avatar, users.telegram_id, users.telegram_fullname, users.telegram_username, users.telegram_code, users.vk_id, users.active, users.fingerprint, users.fingerprint_hash, users.role, users.created_at, users.has_deposited, users.referral_bonus_rate, users.referral_earnings, users.referral_count 
+FROM users 
+WHERE users.username = $1::VARCHAR
+2024-11-21 16:29:36,534 - sqlalchemy.engine.Engine - INFO - [cached since 22.75s ago] ('new',)
+2024-11-21 16:29:36,537 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2024-11-21 16:29:36,538 - src.wallet.service - INFO - Calculating balance for user 2
+2024-11-21 16:29:36,544 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2024-11-21 16:29:36,547 - sqlalchemy.engine.Engine - INFO - SELECT transactions.id, transactions.payment_system, transactions.type, transactions.amount, transactions.from_account, transactions.to_account, transactions.created_at, transactions.status, transactions.user_id 
+FROM transactions 
+WHERE transactions.user_id = $1::INTEGER
+2024-11-21 16:29:36,560 - sqlalchemy.engine.Engine - INFO - [generated in 0.01278s] (2,)
+2024-11-21 16:29:36,590 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2024-11-21 16:29:36,592 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2024-11-21 16:29:36,593 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2024-11-21 16:29:36,702 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2024-11-21 16:29:36,703 - sqlalchemy.engine.Engine - INFO - SELECT users.id, users.referrer_id, users.username, users.password, users.fullname, users.avatar, users.telegram_id, users.telegram_fullname, users.telegram_username, users.telegram_code, users.vk_id, users.active, users.fingerprint, users.fingerprint_hash, users.role, users.created_at, users.has_deposited, users.referral_bonus_rate, users.referral_earnings, users.referral_count 
+FROM users 
+WHERE users.username = $1::VARCHAR
+2024-11-21 16:29:36,704 - sqlalchemy.engine.Engine - INFO - [cached since 22.92s ago] ('new',)
+2024-11-21 16:29:36,706 - sqlalchemy.engine.Engine - INFO - ROLLBACK
+2024-11-21 16:29:36,711 - src.wallet.service - INFO - Calculating balance for user 2
+2024-11-21 16:29:36,714 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2024-11-21 16:29:36,715 - sqlalchemy.engine.Engine - INFO - SELECT transactions.id, transactions.payment_system, transactions.type, transactions.amount, transactions.from_account, transactions.to_account, transactions.created_at, transactions.status, transactions.user_id 
+FROM transactions 
+WHERE transactions.user_id = $1::INTEGER
+2024-11-21 16:29:36,717 - sqlalchemy.engine.Engine - INFO - [cached since 0.1693s ago] (2,)
+2024-11-21 16:29:36,719 - sqlalchemy.engine.Engine - INFO - ROLLBACK
