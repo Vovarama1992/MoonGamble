@@ -25,23 +25,24 @@ class TooEarly(BonusException):
 class TransactionService(BaseService):
 
     async def create_transaction(self, user_id: int, amount: Decimal, transaction_type: str):
-    logger.info(f"Creating transaction for user {user_id}: {transaction_type} of {amount}")
-    
-    # Создаем объект транзакции
-    db_transaction = Transaction(
-        user_id=user_id,
-        amount=amount,
-        type=TransactionType[transaction_type.upper()],  # Преобразуем строку в enum
-        payment_system=PaymentSystem.internal,  # Например, все транзакции внутри системы
-        status=TransactionStatus.CONFIRMED  # Статус по умолчанию CONFIRMED
-    )
-    
-    self.session.add(db_transaction)
-    await self.session.commit()
-    await self.session.refresh(db_transaction)
-    
-    logger.info(f"Transaction created with ID: {db_transaction.id}")
-    return db_transaction
+        logger.info(f"Creating transaction for user {user_id}: {transaction_type} of {amount}")
+        
+        # Создаём объект транзакции
+        db_transaction = Transaction(
+            user_id=user_id,
+            amount=amount,
+            type=TransactionType[transaction_type.upper()],  # Преобразуем строку в enum
+            payment_system=PaymentSystem.internal,  # Например, все транзакции внутри системы
+            status=TransactionStatus.CONFIRMED  # Статус по умолчанию CONFIRMED
+        )
+        
+        # Добавляем в сессию, коммитим и обновляем объект
+        self.session.add(db_transaction)
+        await self.session.commit()
+        await self.session.refresh(db_transaction)
+        
+        logger.info(f"Transaction created with ID: {db_transaction.id}")
+        return db_transaction
 
     async def get_total_transactions_by_user(self, user_id: int, types: Optional[str] = None):
         logger.info(f"Fetching total transactions for user {user_id} with types {types}")
