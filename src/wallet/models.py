@@ -13,6 +13,7 @@ class TransactionType(enum.Enum):
     OUT = 1
     BONUS = 2
     REFERRAL = 3
+    
 
 
 class PaymentSystem(enum.Enum):
