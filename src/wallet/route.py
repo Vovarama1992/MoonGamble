@@ -27,16 +27,28 @@ router = APIRouter()
 
 # Набор промокодов
 promo_codes = [
-    {"code": "WELCOME100", "amount": 100, "used": False},
-    {"code": "BONUS50", "amount": 50, "used": False},
-    {"code": "FREELUN20", "amount": 20, "used": False},
     {"code": "PROMO30", "amount": 30, "used": False},
-    {"code": "VIP200", "amount": 200, "used": False},
     {"code": "DISCOUNT10", "amount": 10, "used": False},
     {"code": "GIFT75", "amount": 75, "used": False},
     {"code": "SPECIAL150", "amount": 150, "used": False},
-    {"code": "FREE50", "amount": 50, "used": False},
     {"code": "LUCKY250", "amount": 250, "used": False},
+
+    # Новые промокоды
+    {"code": "BONUS20", "amount": 20, "used": False},
+    {"code": "SAVE50", "amount": 50, "used": False},
+    {"code": "REWARD100", "amount": 100, "used": False},
+    {"code": "EXTRA200", "amount": 200, "used": False},
+    {"code": "SURPRISE300", "amount": 300, "used": False},
+    {"code": "WIN400", "amount": 400, "used": False},
+    {"code": "VIP500", "amount": 500, "used": False},
+    {"code": "GOLD600", "amount": 600, "used": False},
+    {"code": "PLATINUM700", "amount": 700, "used": False},
+    {"code": "ELITE800", "amount": 800, "used": False},
+    {"code": "KING900", "amount": 900, "used": False},
+    {"code": "SUPER1000", "amount": 1000, "used": False},
+    {"code": "MEGA1100", "amount": 1100, "used": False},
+    {"code": "ULTIMATE1200", "amount": 1200, "used": False},
+    {"code": "LEGEND1300", "amount": 1300, "used": False},
 ]
 
 async def check_and_apply_referral_bonus(user: ReadProfile, deposit_amount: float, session: AsyncSession):
