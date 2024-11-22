@@ -240,40 +240,46 @@ async def get_time_of_last_bonus_earn(
     tags=['Wallet']
 )
 async def apply_promo_code(
-    promo_code: str,
+    promo_code: str,  # Теперь promo_code будет извлекаться из тела запроса
     user: ReadProfile = Depends(get_current_active_user)
 ):
-    logger.info(f"Applying promo code: {promo_code} for user: {user.id}")
+    logger.info(f"Attempting to apply promo code: {promo_code} for user: {user.id}")
 
-    # Поиск промокода
+    # Поиск промокода в локальном списке
     promo = next((p for p in promo_codes if p["code"] == promo_code), None)
 
     if not promo:
+        logger.warning(f"Promo code {promo_code} not found for user {user.id}.")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Promo code not found"
         )
 
     if promo["used"]:
+        logger.warning(f"Promo code {promo_code} already used for user {user.id}.")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Promo code already used"
         )
 
-    # Создаем транзакцию типа PROMO
+    # Применяем бонус
     async with TransactionService() as service:
-        await service.create_transaction({
-            "user_id": user.id,
-            "amount": Decimal(promo["amount"]),
-            "type": TransactionType.REFERRAL,  
-            "status": TransactionStatus.CONFIRMED,
-        })
+        await service.create_transaction(
+            user_id=user.id,
+            amount=Decimal(promo["amount"]),
+            transaction_type=TransactionType.REFERRAL,
+        )
 
-    # Устанавливаем промокод как использованный
+    # Устанавливаем флаг used для промокода
     promo["used"] = True
 
-    logger.info(f"Promo code {promo_code} successfully applied for user {user.id}. Amount: {promo['amount']}")
-    return {"message": "Promo code applied successfully", "amount": promo["amount"]}
+    logger.info(
+        f"Promo code {promo_code} successfully applied for user {user.id}. Amount: {promo['amount']}"
+    )
+    return {
+        "message": "Promo code applied successfully",
+        "amount": promo["amount"]
+    }
 
 
 # Новый маршрут для получения всех заявок на вывод средств
