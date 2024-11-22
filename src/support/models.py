@@ -5,7 +5,7 @@ from sqlalchemy import (Column, DateTime, Enum, ForeignKey, Integer, String,
                         event)
 from sqlalchemy.orm import relationship
 
-from src.database import Base
+from src.db_base import Base
 
 
 class TicketStatus(enum.Enum):

@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 from decimal import Decimal
+from random import randint  # Импорт для генерации случайных чисел
 from typing import List, Optional
 from sqlalchemy.future import select
 from src.service import BaseService
@@ -10,23 +11,28 @@ from .schemas import CreateTransaction
 # Настройка логирования
 logger = logging.getLogger(__name__)
 
+
 class WalletException(Exception):
     pass
+
 
 class InsufficientFunds(Exception):
     pass
 
+
 class BonusException(Exception):
     pass
 
+
 class TooEarly(BonusException):
     pass
+
 
 class TransactionService(BaseService):
 
     async def create_transaction(self, user_id: int, amount: Decimal, transaction_type: str):
         logger.info(f"Creating transaction for user {user_id}: {transaction_type} of {amount}")
-        
+
         # Создаём объект транзакции
         db_transaction = Transaction(
             user_id=user_id,
@@ -35,12 +41,12 @@ class TransactionService(BaseService):
             payment_system=PaymentSystem.internal,  # Например, все транзакции внутри системы
             status=TransactionStatus.CONFIRMED  # Статус по умолчанию CONFIRMED
         )
-        
+
         # Добавляем в сессию, коммитим и обновляем объект
         self.session.add(db_transaction)
         await self.session.commit()
         await self.session.refresh(db_transaction)
-        
+
         logger.info(f"Transaction created with ID: {db_transaction.id}")
         return db_transaction
 
@@ -76,17 +82,17 @@ class TransactionService(BaseService):
         query = select(Transaction).where(Transaction.user_id == user_id)
         transactions = await self.session.execute(query)
         balance = Decimal(0.0)
-        
+
         for transaction in transactions.scalars().all():
             logger.info(f"Transaction: {transaction.id}, Type: {transaction.type}, Amount: {transaction.amount}, Status: {transaction.status}")
-            
+
             if transaction.type in [TransactionType.IN, TransactionType.BONUS, TransactionType.REFERRAL] and transaction.status == TransactionStatus.CONFIRMED:
                 balance += transaction.amount
                 logger.info(f"Balance increased by {transaction.amount}, new balance: {balance}")
             elif transaction.type == TransactionType.OUT and transaction.status == TransactionStatus.CONFIRMED:
                 balance -= transaction.amount
                 logger.info(f"Balance decreased by {transaction.amount}, new balance: {balance}")
-        
+
         logger.info(f"Final balance for user {user_id}: {balance}")
         return balance
 
@@ -122,9 +128,11 @@ class TransactionService(BaseService):
             .where(
                 Transaction.user_id == user_id,
                 Transaction.type == TransactionType.BONUS
-            ).order_by(
+            )
+            .order_by(
                 Transaction.created_at.desc()
-            ).limit(1)
+            )
+            .limit(1)
         )
         transaction = result.scalar_one_or_none()
         if transaction:
@@ -135,14 +143,11 @@ class TransactionService(BaseService):
 
     async def add_bonuses(self, user_id: int, amount: Decimal):
         logger.info(f"Adding bonuses to user {user_id}: {amount}")
-        await self.create_transaction(CreateTransaction(
-            payment_system=PaymentSystem.internal,
-            type=TransactionType.BONUS,
-            from_account='system',
-            to_account=str(user_id),
+        await self.create_transaction(
+            user_id=user_id,
             amount=amount,
-            user_id=user_id
-        ))
+            transaction_type='BONUS'
+        )
 
     async def earn_bonuses(self, user_id: int) -> Optional[Decimal]:
         logger.info(f"User {user_id} attempting to earn bonuses")
@@ -206,7 +211,9 @@ class TransactionService(BaseService):
             select(Transaction).where(
                 Transaction.user_id == user_id,
                 Transaction.type == TransactionType.OUT
-            ).order_by(Transaction.created_at.desc()).limit(1)
+            )
+            .order_by(Transaction.created_at.desc())
+            .limit(1)
         )
         last_withdrawal = result.scalars().first()
         if last_withdrawal:
@@ -214,3 +221,6 @@ class TransactionService(BaseService):
         else:
             logger.info("No withdrawal attempts found")
         return last_withdrawal
+
+
+        

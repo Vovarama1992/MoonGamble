@@ -21,7 +21,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://moon-gamble.vercel.app",
-        "https://moon-gamble.fans/"
+        "https://moon-gamble.fans"
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],

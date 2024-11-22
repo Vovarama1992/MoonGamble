@@ -25,6 +25,20 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Набор промокодов
+promo_codes = [
+    {"code": "WELCOME100", "amount": 100, "used": False},
+    {"code": "BONUS50", "amount": 50, "used": False},
+    {"code": "FREELUN20", "amount": 20, "used": False},
+    {"code": "PROMO30", "amount": 30, "used": False},
+    {"code": "VIP200", "amount": 200, "used": False},
+    {"code": "DISCOUNT10", "amount": 10, "used": False},
+    {"code": "GIFT75", "amount": 75, "used": False},
+    {"code": "SPECIAL150", "amount": 150, "used": False},
+    {"code": "FREE50", "amount": 50, "used": False},
+    {"code": "LUCKY250", "amount": 250, "used": False},
+]
+
 async def check_and_apply_referral_bonus(user: ReadProfile, deposit_amount: float, session: AsyncSession):
     if not user.has_deposited:
         if user.referrer_id:
@@ -214,27 +228,42 @@ async def get_time_of_last_bonus_earn(
     tags=['Wallet']
 )
 async def apply_promo_code(
-    promo_code: str,
+    promo_code: str,  # Теперь promo_code будет извлекаться из тела запроса
     user: ReadProfile = Depends(get_current_active_user)
 ):
-    async with async_session() as session:
-        async with TransactionService() as service:
-            promo = next((p for p in promo_codes if p["code"] == promo_code), None)
-            
-            if not promo:
-                logger.warning(f"Promo code {promo_code} not found for user {user.id}.")
-                raise HTTPException(status.HTTP_404_NOT_FOUND, 'Promo code not found')
-            
-            if promo["used"]:
-                logger.warning(f"Promo code {promo_code} already used for user {user.id}.")
-                raise HTTPException(status.HTTP_400_BAD_REQUEST, 'Promo code already used')
+    logger.info(f"Attempting to apply promo code: {promo_code} for user: {user.id}")
 
-            await service.add_bonuses(user.id, promo["amount"])
-            
-            promo["used"] = True
+    # Поиск промокода в локальном списке
+    promo = next((p for p in promo_codes if p["code"] == promo_code), None)
 
-            logger.info(f"Promo code {promo_code} applied for user {user.id}, amount: {promo['amount']}.")
-            return {"message": "Promo code applied successfully", "amount": promo["amount"]}
+    if not promo:
+        logger.warning(f"Promo code {promo_code} not found for user {user.id}.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Promo code not found"
+        )
+
+    if promo["used"]:
+        logger.warning(f"Promo code {promo_code} already used for user {user.id}.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Promo code already used"
+        )
+
+    # Применяем бонус
+    async with TransactionService() as service:
+        await service.add_bonuses(user.id, Decimal(promo["amount"]))
+
+    # Устанавливаем флаг used для промокода
+    promo["used"] = True
+
+    logger.info(
+        f"Promo code {promo_code} successfully applied for user {user.id}. Amount: {promo['amount']}"
+    )
+    return {
+        "message": "Promo code applied successfully",
+        "amount": promo["amount"]
+    }
 
 
 # Новый маршрут для получения всех заявок на вывод средств
