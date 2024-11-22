@@ -262,13 +262,16 @@ async def apply_promo_code(
             detail="Promo code already used"
         )
 
-    # Применяем бонус
+    # Создаем транзакцию
+    transaction_data = {
+        "user_id": user.id,
+        "amount": Decimal(promo["amount"]),
+        "transaction_type": "REFERRAL"  # Передаем строку, как ожидает create_transaction
+    }
+
+    # Применяем бонус через TransactionService
     async with TransactionService() as service:
-        await service.create_transaction(
-            user_id=user.id,
-            amount=Decimal(promo["amount"]),
-            transaction_type=TransactionType.REFERRAL,
-        )
+        db_transaction = await service.create_transaction(**transaction_data)
 
     # Устанавливаем флаг used для промокода
     promo["used"] = True
