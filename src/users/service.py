@@ -102,51 +102,51 @@ class UserService(BaseService):
         return user
 
     async def link_vk(self, user_id: int, vk_id: int):
-    user = await self.get_user_by_id(user_id)
+        user = await self.get_user_by_id(user_id)
 
-    user.vk_id = vk_id
+        user.vk_id = vk_id
 
-    # Сохраняем изменения пользователя
-    await self.session.flush([user])
-    await self.session.commit()
-    await self.session.refresh(user)
+        # Сохраняем изменения пользователя
+        await self.session.flush([user])
+        await self.session.commit()
+        await self.session.refresh(user)
 
-    # Создаем бонусную транзакцию с явным статусом CONFIRMED
-    transaction_service = TransactionService(self.session)  # Создаем экземпляр сервиса транзакций
-    bonus_amount = Decimal(10)  # Сумма бонуса
+        # Создаем бонусную транзакцию с явным статусом CONFIRMED
+        transaction_service = TransactionService(self.session)  # Создаем экземпляр сервиса транзакций
+        bonus_amount = Decimal(10)  # Сумма бонуса
 
-    await transaction_service.create_transaction(
-        user_id=user_id,
-        amount=bonus_amount,
-        transaction_type='BONUS'  # Тип транзакции
-    )
+        await transaction_service.create_transaction(
+            user_id=user_id,
+            amount=bonus_amount,
+            transaction_type='BONUS'  # Тип транзакции
+        )
 
-    return user
+        return user
 
-async def change_password(self, user_id: int, new_password: str):
-    user = await self.get_user_by_id(user_id)
-    user.password = new_password
+    async def change_password(self, user_id: int, new_password: str):
+        user = await self.get_user_by_id(user_id)
+        user.password = new_password
 
-    await self.session.flush([user])
-    await self.session.commit()
-    await self.session.refresh(user)
+        await self.session.flush([user])
+        await self.session.commit()
+        await self.session.refresh(user)
 
-    return user
+        return user
 
-async def update_avatar(self, user_id: int, avatar_id: int):
-    db_user = await self.get_user_by_id(user_id)
+    async def update_avatar(self, user_id: int, avatar_id: int):
+        db_user = await self.get_user_by_id(user_id)
 
-    db_user.avatar = str(avatar_id)
+        db_user.avatar = str(avatar_id)
 
-    await self.session.commit()
-    await self.session.refresh(db_user)
+        await self.session.commit()
+        await self.session.refresh(db_user)
 
-    return db_user
+        return db_user
 
-async def update_user(self, user: User):
-    self.session.add(user)
-    await self.session.commit()
-    await self.session.refresh(user)
+    async def update_user(self, user: User):
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
 
 
 class ReferralsService(BaseService):
