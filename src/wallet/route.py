@@ -119,16 +119,13 @@ async def create_bonus_deposit(
     async with async_session() as session:
         await check_and_apply_referral_bonus(user, deposit.amount, session)
 
-        transaction = CreateTransaction(
-            payment_system=deposit.payment_system,
-            amount=deposit.amount,
-            type=TransactionType.BONUS,
-            user_id=user.id,
-            status=TransactionStatus.CONFIRMED
-        )
-
+        # Распаковка полей для передачи в create_transaction
         async with TransactionService() as service:
-            db_transaction = await service.create_transaction(transaction)
+            db_transaction = await service.create_transaction(
+                user_id=user.id,
+                amount=deposit.amount,
+                transaction_type=TransactionType.BONUS.name  # Передаем имя типа
+            )
             logger.info(f"Bonus deposit created: {db_transaction}")
             return ReadTransaction.model_validate(db_transaction)
 
