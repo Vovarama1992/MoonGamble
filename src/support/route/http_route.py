@@ -66,6 +66,22 @@ async def read_tickets(
     return [ReadTicket.model_validate(t) for t in tickets]
 
 
+@router.get('/all', tags=['Tickets'])
+async def read_all_tickets(
+    limit: int = fastapi.Query(5, le=30),
+    page: int = fastapi.Query(1),
+    db: AsyncSession = fastapi.Depends(get_session)
+):
+    # Получаем все тикеты с пагинацией
+    result = await db.execute(
+        select(Ticket)
+        .order_by(Ticket.updated_at.desc())
+        .offset((page - 1) * limit).limit(limit)
+    )
+    tickets = result.scalars()
+    return [ReadTicket.model_validate(t) for t in tickets]
+
+
 @router.get('/{ticket_id}', tags=['Tickets'])
 async def read_ticket(
     ticket_id: int,

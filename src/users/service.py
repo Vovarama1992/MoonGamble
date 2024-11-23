@@ -5,6 +5,7 @@ import sqlalchemy
 
 from src.service import BaseService
 from src.wallet import models as wallet_models
+from src.wallet.service import TransactionService
 
 from .fingerprint import hash_fingerprint
 from .models import User, UserRole
@@ -13,17 +14,22 @@ from .security import get_password_hash
 
 STATICS_PATH = './static/users/'
 
+
 class UserException(Exception):
     ...
+
 
 class UserNotFound(UserException):
     ...
 
+
 class AvatarException(UserException):
     ...
 
+
 class AvatarTooLarge(AvatarException):
     ...
+
 
 class UserService(BaseService):
     async def register_user(self, user: RegisterUser):
@@ -100,9 +106,15 @@ class UserService(BaseService):
 
         user.vk_id = vk_id
 
+        # Сохраняем изменения пользователя
         await self.session.flush([user])
         await self.session.commit()
         await self.session.refresh(user)
+
+        # Создаем бонусную транзакцию
+        transaction_service = TransactionService(self.session)  # Создаем экземпляр сервиса транзакций
+        bonus_amount = Decimal(10)  # Сумма бонуса
+        await transaction_service.add_bonuses(user_id, bonus_amount)
 
         return user
 
@@ -130,6 +142,7 @@ class UserService(BaseService):
         self.session.add(user)
         await self.session.commit()
         await self.session.refresh(user)
+
 
 class ReferralsService(BaseService):
     async def count_user_referrals_last_n_days(self, user_id: int, n_days=30):
@@ -167,4 +180,3 @@ class ReferralsService(BaseService):
         for transaction in results.scalars():
             balance += transaction.amount
         return balance
-
