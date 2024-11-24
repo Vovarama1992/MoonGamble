@@ -58,7 +58,8 @@ async def check_and_apply_referral_bonus(user: ReadProfile, deposit_amount: floa
             if referrer:
                 logger.info(f"Referrer found: {referrer.id}, username: {referrer.username}, referral_bonus_rate: {referrer.referral_bonus_rate}")
 
-                referral_bonus_rate = referrer.referral_bonus_rate or Decimal(0.1)
+                # Приведение к Decimal
+                referral_bonus_rate = Decimal(referrer.referral_bonus_rate or 0.1)
                 referral_bonus = Decimal(deposit_amount) * referral_bonus_rate
 
                 if referrer.referral_earnings is None:
