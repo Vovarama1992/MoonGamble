@@ -27,24 +27,23 @@ router = APIRouter()
 
 # Набор промокодов
 promo_codes = [
-    {"code": "PROMO30", "amount": 30, "used": False},
-    {"code": "DISCOUNT10", "amount": 10, "used": False},
-    {"code": "GIFT75", "amount": 75, "used": False},
-    {"code": "SPECIAL150", "amount": 150, "used": False},
-    {"code": "LUCKY250", "amount": 250, "used": False},
+    {"code": "LUCKY10", "amount": 10, "used": False},
+    {"code": "WELCOME20", "amount": 20, "used": False},
+    {"code": "BONUS50", "amount": 50, "used": False},
+    {"code": "FIRSTTIME100", "amount": 100, "used": False},
+    {"code": "GAMBLER25", "amount": 25, "used": False},
 
     # Новые промокоды
-    {"code": "FLASH20", "amount": 20, "used": False},
-    {"code": "BONUS45", "amount": 45, "used": False},
-    {"code": "WINNER50", "amount": 50, "used": False},
-    {"code": "LUCKYBOY100", "amount": 100, "used": False},
-    {"code": "HAPPYFEST150", "amount": 150, "used": False},
-    {"code": "BIGWIN200", "amount": 200, "used": False},
-    {"code": "DOUBLEDISCOUNT250", "amount": 250, "used": False},
-    {"code": "VIPEXCLUSIVE300", "amount": 300, "used": False},
-    {"code": "SUPERDEAL350", "amount": 350, "used": False},
-    {"code": "PREMIUM400", "amount": 400, "used": False},
-    {"code": "MAXVALUE500", "amount": 500, "used": False}
+    {"code": "FREEMOON30", "amount": 30, "used": False},
+    {"code": "VIPUSER15", "amount": 15, "used": False},
+    {"code": "LUCKYDAY50", "amount": 50, "used": False},
+    {"code": "EXTRA100", "amount": 100, "used": False},
+    {"code": "WINBIG200", "amount": 200, "used": False},
+    {"code": "SUPERDEAL10", "amount": 10, "used": False},
+    {"code": "BONUS125", "amount": 125, "used": False},
+    {"code": "HOLIDAY50", "amount": 50, "used": False},
+    {"code": "VIPBONUS200", "amount": 200, "used": False},
+    {"code": "TOPPLAYER300", "amount": 300, "used": False}
 ]
 
 async def check_and_apply_referral_bonus(user: ReadProfile, deposit_amount: float, session: AsyncSession):
