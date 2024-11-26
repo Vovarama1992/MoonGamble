@@ -198,6 +198,7 @@ async def link_vk(
     logger.debug('VK OAuth code received: %s', code)
 
     try:
+        # Получаем токен доступа от VK
         access_token = await get_access_token(code)
         logger.info('Access token received for VK user ID: %s', access_token.user_id)
     except Exception as e:
@@ -205,14 +206,19 @@ async def link_vk(
         raise HTTPException(status_code=400, detail='Failed to retrieve VK access token')
 
     try:
+        # Используем UserService для привязки VK аккаунта
         async with UserService() as service:
-            await service.link_vk(me.id, access_token.user_id)
-            logger.info('Successfully linked VK account to user ID: %s', me.id)
-            logger.debug('Linked VK user ID: %s', access_token.user_id)
-            
-            # Создаем токен доступа после успешной привязки VK аккаунта
-            access_token = create_access_token(data={"sub": me.username})
-            return Token(access_token=access_token, token_type="bearer")
+            async with TransactionService(service.session) as transaction_service:
+                # Обновляем данные пользователя через сервис
+                await service.link_vk(me.id, access_token.user_id)
+                
+                # Логируем успешную привязку
+                logger.info('Successfully linked VK account to user ID: %s', me.id)
+                logger.debug('Linked VK user ID: %s', access_token.user_id)
+                
+                # Создаем токен доступа после успешной привязки VK аккаунта
+                new_access_token = create_access_token(data={"sub": me.username})
+                return Token(access_token=new_access_token, token_type="bearer")
     except Exception as e:
         logger.error('Failed to link VK account for user ID: %s, error: %s', me.id, str(e))
         raise HTTPException(status_code=500, detail='Failed to link VK account')
