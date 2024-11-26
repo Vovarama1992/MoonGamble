@@ -30,7 +30,7 @@ class TooEarly(BonusException):
 
 class TransactionService(BaseService):
 
-    async def create_transaction(self, user_id: int, amount: Decimal, transaction_type: str):
+    async def create_transaction(self, user_id: int, amount: Decimal, transaction_type: str, is_hard_deposit: bool = False):
         logger.info(f"Creating transaction for user {user_id}: {transaction_type} of {amount}")
 
         # Создаём объект транзакции
@@ -39,7 +39,8 @@ class TransactionService(BaseService):
             amount=amount,
             type=TransactionType[transaction_type.upper()],  # Преобразуем строку в enum
             payment_system=PaymentSystem.internal,  # Например, все транзакции внутри системы
-            status=TransactionStatus.CONFIRMED  # Статус по умолчанию CONFIRMED
+            status=TransactionStatus.CONFIRMED,
+            is_hard_deposit=is_hard_deposit  # Статус по умолчанию CONFIRMED
         )
 
         # Добавляем в сессию, коммитим и обновляем объект
@@ -127,7 +128,8 @@ class TransactionService(BaseService):
             select(Transaction)
             .where(
                 Transaction.user_id == user_id,
-                Transaction.type == TransactionType.BONUS
+                Transaction.type == TransactionType.BONUS,
+                Transaction.is_hard_deposit == True
             )
             .order_by(
                 Transaction.created_at.desc()
@@ -141,12 +143,13 @@ class TransactionService(BaseService):
             logger.info("No bonus earn transaction found.")
         return transaction
 
-    async def add_bonuses(self, user_id: int, amount: Decimal):
+    async def add_bonuses(self, user_id: int, amount: Decimal, is_hard_deposit: bool = False):
         logger.info(f"Adding bonuses to user {user_id}: {amount}")
         await self.create_transaction(
             user_id=user_id,
             amount=amount,
-            transaction_type='BONUS'
+            transaction_type='BONUS',
+            is_hard_deposit=is_hard_deposit
         )
 
     async def earn_bonuses(self, user_id: int) -> Optional[Decimal]:
@@ -164,7 +167,7 @@ class TransactionService(BaseService):
         seconds_from_last_bonus_earn = (now - transaction.created_at).total_seconds()
         if seconds_from_last_bonus_earn >= 86400:  # 24 hours
             earned_bonuses = Decimal(randint(10, 100))
-            await self.add_bonuses(user_id, earned_bonuses)
+            await self.add_bonuses(user_id, earned_bonuses, is_hard_deposit=True)
             logger.info(f"Bonuses earned after 24 hours: {earned_bonuses}")
             return earned_bonuses
         else:
@@ -221,6 +224,9 @@ class TransactionService(BaseService):
         else:
             logger.info("No withdrawal attempts found")
         return last_withdrawal
+
+
+        
 
 
         

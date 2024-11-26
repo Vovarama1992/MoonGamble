@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import (DECIMAL, Column, DateTime, Enum, ForeignKey, Integer,
+from sqlalchemy import (DECIMAL, Column, DateTime, Boolean, Enum, ForeignKey, Integer,
                         String)
 from sqlalchemy.orm import relationship
 
@@ -33,6 +33,7 @@ class TransactionStatus(enum.Enum):
 
 class Transaction(Base):
     __tablename__ = 'transactions'
+
     id = Column(Integer, primary_key=True, unique=True)
     payment_system = Column(Enum(PaymentSystem), nullable=False)
     type = Column(Enum(TransactionType), nullable=False)
@@ -47,4 +48,7 @@ class Transaction(Base):
 
     user_id = Column(Integer, ForeignKey('users.id'))
     user = relationship('User', back_populates='transactions')
+
+    # Новый флаг для трудового депозита
+    is_hard_deposit = Column(Boolean, default=False)
 

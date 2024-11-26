@@ -34,21 +34,17 @@ promo_codes = [
     {"code": "LUCKY250", "amount": 250, "used": False},
 
     # Новые промокоды
-    {"code": "BONUS20", "amount": 20, "used": False},
-    {"code": "SAVE50", "amount": 50, "used": False},
-    {"code": "REWARD100", "amount": 100, "used": False},
-    {"code": "EXTRA200", "amount": 200, "used": False},
-    {"code": "SURPRISE300", "amount": 300, "used": False},
-    {"code": "WIN400", "amount": 400, "used": False},
-    {"code": "VIP500", "amount": 500, "used": False},
-    {"code": "GOLD600", "amount": 600, "used": False},
-    {"code": "PLATINUM700", "amount": 700, "used": False},
-    {"code": "ELITE800", "amount": 800, "used": False},
-    {"code": "KING900", "amount": 900, "used": False},
-    {"code": "SUPER1000", "amount": 1000, "used": False},
-    {"code": "MEGA1100", "amount": 1100, "used": False},
-    {"code": "ULTIMATE1200", "amount": 1200, "used": False},
-    {"code": "LEGEND1300", "amount": 1300, "used": False},
+    {"code": "FLASH20", "amount": 20, "used": False},
+    {"code": "BONUS45", "amount": 45, "used": False},
+    {"code": "WINNER50", "amount": 50, "used": False},
+    {"code": "LUCKYBOY100", "amount": 100, "used": False},
+    {"code": "HAPPYFEST150", "amount": 150, "used": False},
+    {"code": "BIGWIN200", "amount": 200, "used": False},
+    {"code": "DOUBLEDISCOUNT250", "amount": 250, "used": False},
+    {"code": "VIPEXCLUSIVE300", "amount": 300, "used": False},
+    {"code": "SUPERDEAL350", "amount": 350, "used": False},
+    {"code": "PREMIUM400", "amount": 400, "used": False},
+    {"code": "MAXVALUE500", "amount": 500, "used": False}
 ]
 
 async def check_and_apply_referral_bonus(user: ReadProfile, deposit_amount: float, session: AsyncSession):
@@ -264,7 +260,7 @@ async def apply_promo_code(
     transaction_data = {
         "user_id": user.id,
         "amount": Decimal(promo["amount"]),
-        "transaction_type": "REFERRAL"  # Передаем строку, как ожидает create_transaction
+        "transaction_type": "BONUS"  # Передаем строку, как ожидает create_transaction
     }
 
     # Применяем бонус через TransactionService
