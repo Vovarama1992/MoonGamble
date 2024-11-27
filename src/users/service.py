@@ -111,15 +111,14 @@ class UserService(BaseService):
         await self.session.commit()
         await self.session.refresh(user)
 
-        # Создаем бонусную транзакцию с явным статусом CONFIRMED
-        transaction_service = TransactionService(self.session)  # Создаем экземпляр сервиса транзакций
+        # Используем TransactionService через контекстный менеджер
         bonus_amount = Decimal(10)  # Сумма бонуса
-
-        await transaction_service.create_transaction(
-            user_id=user_id,
-            amount=bonus_amount,
-            transaction_type='BONUS'  # Тип транзакции
-        )
+        async with TransactionService() as transaction_service:
+            await transaction_service.create_transaction(
+                user_id=user_id,
+                amount=bonus_amount,
+                transaction_type='BONUS'  # Тип транзакции
+            )
 
         return user
 
