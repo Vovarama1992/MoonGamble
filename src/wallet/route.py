@@ -34,16 +34,16 @@ promo_codes = [
     {"code": "GAMBLER25", "amount": 25, "used": False},
 
     # Новые промокоды
-    {"code": "FREEMOON30", "amount": 30, "used": False},
-    {"code": "VIPUSER15", "amount": 15, "used": False},
-    {"code": "LUCKYDAY50", "amount": 50, "used": False},
-    {"code": "EXTRA100", "amount": 100, "used": False},
-    {"code": "WINBIG200", "amount": 200, "used": False},
-    {"code": "SUPERDEAL10", "amount": 10, "used": False},
-    {"code": "BONUS125", "amount": 125, "used": False},
-    {"code": "HOLIDAY50", "amount": 50, "used": False},
-    {"code": "VIPBONUS200", "amount": 200, "used": False},
-    {"code": "TOPPLAYER300", "amount": 300, "used": False}
+    {"code": "MOONLIGHT40", "amount": 40, "used": False},
+    {"code": "STARWIN75", "amount": 75, "used": False},
+    {"code": "HAPPYHOUR20", "amount": 20, "used": False},
+    {"code": "EXCLUSIVE150", "amount": 150, "used": False},
+    {"code": "BESTPLAYER250", "amount": 250, "used": False},
+    {"code": "WINNER100", "amount": 100, "used": False},
+    {"code": "BONUSKING50", "amount": 50, "used": False},
+    {"code": "REWARD500", "amount": 500, "used": False},
+    {"code": "SUPERLUCK70", "amount": 70, "used": False},
+    {"code": "GOLDEN250", "amount": 250, "used": False}
 ]
 
 async def check_and_apply_referral_bonus(user: ReadProfile, deposit_amount: float, session: AsyncSession):
