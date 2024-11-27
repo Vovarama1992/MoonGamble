@@ -208,9 +208,6 @@ async def link_vk(
     try:
         # Используем UserService для привязки VK аккаунта
         async with UserService() as service:
-            # Создаем экземпляр TransactionService
-            transaction_service = TransactionService(service.session)
-
             # Привязываем VK к пользователю
             await service.link_vk(me.id, access_token.user_id)
 
